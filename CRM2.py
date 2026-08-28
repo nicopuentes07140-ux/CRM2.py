@@ -16,9 +16,9 @@ MESES_ES = {
     7: "Julio", 8: "Agosto", 9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre",
 }
 MESES_INV = {v.lower(): k for k, v in MESES_ES.items()}
-LINEAS = {"al01": "AL-01 (25,000 un)", "al02": "AL-02 (23,000 un)", "al04": "AL-04 (60,000 un)"}
+LINEAS = {"Samsung1": "SG(25,000 un)", "LG_TV: "LG(23,000 un)", "Neulsom LED": "NL_04 (60,000 un)"}
  
-st.set_page_config(page_title="Seguimiento de Producción · Planta Tubos", layout="wide", page_icon="🏭")
+st.set_page_config(page_title="Seguimiento de Producción · Planta Sector tecnologico", layout="wide", page_icon="🏭")
 
 
 def init_db():
@@ -133,7 +133,7 @@ main()
 # ---------------------------------------------------------------------------
 # Sidebar / navegación
 # ---------------------------------------------------------------------------
-st.sidebar.title("🏭 Tekniplex/Planta Puente Aranda")
+st.sidebar.title("🏭 Korea/Planta de Componentes tecnologicos")
 st.sidebar.caption("Seguimiento de producción")
  
 df_all = load_data()
