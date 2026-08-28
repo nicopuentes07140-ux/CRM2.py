@@ -162,53 +162,45 @@ st.sidebar.caption(f"Registros totales: {len(df_all)}")
 # ---------------------------------------------------------------------------
 if page == "📊 Dashboard":
     st.title("📊 Dashboard de producción")
- st.header("📁 Cargar archivo Excel y generar dashboard")
 
-archivo_excel = st.file_uploader("Sube tu archivo Excel (.xlsx)", type=["xlsx"])
+    st.header("📁 Cargar archivo Excel y generar dashboard")
+    archivo_excel = st.file_uploader("Sube tu archivo Excel (.xlsx)", type=["xlsx"])
+    if archivo_excel is not None:
+        wb = openpyxl.load_workbook(archivo_excel, data_only=True)
+        hoja_sel = st.selectbox("Selecciona la hoja", wb.sheetnames)
+        df = pd.read_excel(archivo_excel, sheet_name=hoja_sel)
+        st.success(f"Se cargaron {len(df)} filas de la hoja '{hoja_sel}'.")
+        st.dataframe(df, use_container_width=True, hide_index=True)
+        st.divider()
+        st.subheader("⚙️ Configura el dashboard")
+        columnas = list(df.columns)
+        col_dia = st.selectbox("Columna del eje X (día)", columnas, index=0)
+        col_lineas = st.multiselect("Columnas de producción por línea", [c for c in columnas if c != col_dia])
+        col_meta = st.selectbox("Columna de meta del día (opcional)", ["(ninguna)"] + columnas)
+        if col_lineas:
+            df["produccion_total"] = df[col_lineas].sum(axis=1)
+            st.subheader("Producción diaria por línea")
+            df_melt = df.melt(id_vars=[col_dia], value_vars=col_lineas, var_name="línea", value_name="unidades")
+            fig1 = px.bar(df_melt, x=col_dia, y="unidades", color="línea", barmode="stack")
+            st.plotly_chart(fig1, use_container_width=True)
+            st.subheader("Producción total por día")
+            fig2 = px.line(df, x=col_dia, y="produccion_total", markers=True)
+            st.plotly_chart(fig2, use_container_width=True)
+            if col_meta != "(ninguna)":
+                df["produccion_acumulada"] = df["produccion_total"].cumsum()
+                df["meta_acumulada"] = df[col_meta].cumsum()
+                df["cumplimiento"] = df["produccion_acumulada"] / df["meta_acumulada"] * 100
+                st.subheader("Producción acumulada vs meta")
+                fig3 = go.Figure()
+                fig3.add_trace(go.Scatter(x=df[col_dia], y=df["produccion_acumulada"], name="Producción acumulada", mode="lines+markers"))
+                fig3.add_trace(go.Scatter(x=df[col_dia], y=df["meta_acumulada"], name="Meta acumulada", mode="lines", line=dict(dash="dash")))
+                st.plotly_chart(fig3, use_container_width=True)
+                st.subheader("Cumplimiento diario (%)")
+                df["cumplimiento_dia"] = df["produccion_total"] / df[col_meta] * 100
+                fig4 = px.line(df, x=col_dia, y="cumplimiento_dia", markers=True)
+                fig4.update_layout(yaxis_title="% cumplimiento")
+                st.plotly_chart(fig4, use_container_width=True)
 
-if archivo_excel is not None:
-    wb = openpyxl.load_workbook(archivo_excel, data_only=True)
-    hoja_sel = st.selectbox("Selecciona la hoja", wb.sheetnames)
-    df = pd.read_excel(archivo_excel, sheet_name=hoja_sel)
-
-    st.success(f"Se cargaron {len(df)} filas de la hoja '{hoja_sel}'.")
-    st.dataframe(df, use_container_width=True, hide_index=True)
-
-    st.divider()
-    st.subheader("⚙️ Configura el dashboard")
-    columnas = list(df.columns)
-    col_dia = st.selectbox("Columna del eje X (día)", columnas, index=0)
-    col_lineas = st.multiselect("Columnas de producción por línea", [c for c in columnas if c != col_dia])
-    col_meta = st.selectbox("Columna de meta del día (opcional)", ["(ninguna)"] + columnas)
-
-    if col_lineas:
-        df["produccion_total"] = df[col_lineas].sum(axis=1)
-
-        st.subheader("Producción diaria por línea")
-        df_melt = df.melt(id_vars=[col_dia], value_vars=col_lineas, var_name="línea", value_name="unidades")
-        fig1 = px.bar(df_melt, x=col_dia, y="unidades", color="línea", barmode="stack")
-        st.plotly_chart(fig1, use_container_width=True)
-
-        st.subheader("Producción total por día")
-        fig2 = px.line(df, x=col_dia, y="produccion_total", markers=True)
-        st.plotly_chart(fig2, use_container_width=True)
-
-        if col_meta != "(ninguna)":
-            df["produccion_acumulada"] = df["produccion_total"].cumsum()
-            df["meta_acumulada"] = df[col_meta].cumsum()
-            df["cumplimiento"] = df["produccion_acumulada"] / df["meta_acumulada"] * 100
-
-            st.subheader("Producción acumulada vs meta")
-            fig3 = go.Figure()
-            fig3.add_trace(go.Scatter(x=df[col_dia], y=df["produccion_acumulada"], name="Producción acumulada", mode="lines+markers"))
-            fig3.add_trace(go.Scatter(x=df[col_dia], y=df["meta_acumulada"], name="Meta acumulada", mode="lines", line=dict(dash="dash")))
-            st.plotly_chart(fig3, use_container_width=True)
-
-            st.subheader("Cumplimiento diario (%)")
-            df["cumplimiento_dia"] = df["produccion_total"] / df[col_meta] * 100
-            fig4 = px.line(df, x=col_dia, y="cumplimiento_dia", markers=True)
-            fig4.update_layout(yaxis_title="% cumplimiento")
-            st.plotly_chart(fig4, use_container_width=True)
  #---------------------------------------------------------------------------------------------------------------------- 
     if df_all.empty:
         st.warning("Aún no hay datos. Usa 'Registrar producción' o 'Importar Excel' para cargar información.")
